@@ -10,8 +10,6 @@ ARIMA 모델 => Statsmodel
   MA : 이전 정보의 오차를 현재 상태로 추론
 '''
 
-
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -145,7 +143,37 @@ forecast_data
 forecast_data[['ds','yhat','yhat_lower','yhat_upper']].tail(5)
 
 # 결과의 시각화 
+# 검은점 : 실데이터
+# 파란색 : 예측값
 fig1 = prophet.plot(forecast_data)
+fig2 = prophet.plot_components(forecast_data)
+
+# 실제 가격과 예측 가격 간의 차이 분석 => 성능
+y = bitcoin_df.y.values[5:] #실제 데이터. 첫 5일 제외. 실데이터 
+y_pred = forecast_data.yhat.values[5:-5]
+
+# r2score, RSME 값을 출력하기
+from sklearn.metrics import mean_squared_error, r2_score
+from math import sqrt 
+
+r2 = r2_score(y, y_pred)
+r2
+rmse = sqrt(mean_squared_error(y,y_pred))
+rmse
+
+# 실제 데이터와 비교
+test_file_path = 'market-price-test.csv'
+
+# 실데이터 정보
+bitcoin_test_df = pd.read_csv(test_file_path,names=['ds','y'],header=0)
+y = bitcoin_test_df.y.values
+y
+y_pred =  forecast_data.yhat.values[-5:]
+y_pred
+
+plt.plot(y_pred,color='gold')
+plt.plot(y,color='green')
+
 
 
 
