@@ -1,0 +1,129 @@
+'''
+    생존자 분류 
+    분류 : KNN, SVM, 의사결정트리, 
+        로지스틱회귀분석(logistic regression)
+    logistic regression : 예측값을 0 ~ 1 사이 값으로 제한. 
+    0.5보다 큰 경우 : 1
+    0.5보다 작은 경우 : 0 
+    
+결측값 처리 필요 
+    1. 삭제
+    - 처리가 쉽다. but, 중요한 정보 삭제 가능성 있음. 
+    2. 변경 
+        - 평균값 또는 중앙값 또는 최빈값 등으로 결측값을 변경 
+'''
+
+# 1. age 컬럼의 결측값을 평균값으로 변경하기 
+df_train.info()
+age_mean = df_train["age"].mean(axis=0)
+df_train['age'].fillna(age_mean,inplace=True)
+age_mean = df_train["age"].mean(skipna=False)
+age_mean
+
+# 2. embarked 컬럼의 결측값을 최빈값으로 변경하기
+# (1)
+embarked_mode = df_train["embarked"].mode()
+df_train['embarked'].fillna(embarked_mode,inplace=True)
+df_train['embarked']
+
+# (2)
+replace_embarked = df_train['embarked'].value_counts().index[0]
+df_train['embarked'].fillna(replace_embarked,inplace=True)
+
+# (3)
+replace_embarked = df_train['embarked'].value_counts().indmax()
+df_train['embarked'].fillna(replace_embarked,inplace=True)
+
+# 3. 데이터셋에서
+# name, ticket, body, cabin, home.dest 피처를 제거
+df_train.columns
+
+# (1) del 이용하기
+del df_train["name"]
+del df_train["ticket"]
+del df_train["body"]
+del df_train["cabin"]
+del df_train["home.dest"]
+
+# (2) drop 이용하기
+df_train = df_train.drop(["name", "ticket", "body", "cabin", "home.dest"], axis=1)
+
+
+#####################
+# test 데이터에 적용 #
+#####################
+
+# 1. age 컬럼의 결측값을 평균값으로 변경하기 
+df_test.info()
+age_mean = df_test["age"].mean(axis=0)
+df_test['age'].fillna(age_mean,inplace=True)
+age_mean = df_test["age"].mean(skipna=False)
+age_mean
+
+# 2. embarked 컬럼의 결측값을 최빈값으로 변경하기
+# (1)
+embarked_mode = df_test["embarked"].mode()
+df_test['embarked'].fillna(embarked_mode,inplace=True)
+df_test['embarked']
+
+# (2)
+replace_embarked = df_test['embarked'].value_counts().index[0]
+df_test['embarked'].fillna(replace_embarked,inplace=True)
+
+# (3)
+replace_embarked = df_test['embarked'].value_counts().indmax()
+df_test['embarked'].fillna(replace_embarked,inplace=True)
+
+# 3. 데이터셋에서
+# name, ticket, body, cabin, home.dest 피처를 제거
+df_test.columns
+
+# (1) del 이용하기
+del df_test["name"]
+del df_test["ticket"]
+del df_test["body"]
+del df_test["cabin"]
+del df_test["home.dest"]
+
+# (2) drop 이용하기
+df_test = df_test.drop(["name", "ticket", "body", "cabin", "home.dest"], axis=1)
+
+# 4. embarked, sex 데이터를 원핫인코딩하기 (whole_df)을 생성 
+# whole_df : df_train 데이터와 df_test 데이터를 합치기 
+whole_df = df_train.append(df_test)
+
+
+whole_df_encoded = pd.get_dummies(whole_df)
+whole_df_encoded.info()
+
+# whole_df_encoded 데이터를 다시 df_train, df_test로 다시 분류 
+df_train #(~915행)
+df_test #(916행~)
+train_num = len(df_train) #916
+df_train = whole_df_encoded[:train_num]
+df_test = whole_df_encoded[train_num:]
+df_train.info()
+df_test.info()
+
+# 독립변수, 속성변수 분리하기
+# 독립변수 : survived 외의 모든 피처 
+# 속성변수 : survived
+X_train = df_train[df_train.columns.difference(["survived"])].values
+# 또는 X_train = df_train.loc[:,df_train.columns != "survived"].values
+y_train = df_train["survived"].values
+
+X_test = df_test[df_train.columns.difference(["survived"])].values
+y_test = df_test["survived"].values
+
+# 로지스틱 회귀 모델을 이용하여 분류하기
+from sklearn.linear_model import LogisticRegression
+lr = LogisticRegression(random_state = 0)
+lr.fit(X_train, y_train)
+y_pred = lr.predict(X_test)
+y_test[:10]
+y_pred[:10]
+
+# 분류모델의 평가 방법 : Confusion Matrix 
+from sklearn.metrics import confusion_matrix
+confmat = confusion_matrix(y_true=y_test,y_pred=y_pred)
+print(confmat)
